@@ -1,0 +1,11 @@
+export function fillDefault(value: any, defaults: any): any;
+export function deepReplace(dest: any, src: any): any;
+export function deepmerge(dest: any, src: any): any;
+export function deepextends(dest: any, base: any): any;
+export function deepEquals(dest: any, src: any): boolean;
+export function deepcopy(src: any): any;
+export function deepclean(obj: any): any;
+export function deepKeyConvert(src: any, convert: any): any;
+export function map(o: any, f: any): any;
+export function assignMissing(dst: any, src: any): any;
+export function keysIfObject(obj: any): string[];

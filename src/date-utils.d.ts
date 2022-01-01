@@ -1,0 +1,15 @@
+export function getTime(date: any): number;
+export function toDate(date: any): Date;
+export function toNewDate(date: any): Date;
+export function toYYYYmmdd(date: any): string;
+export function toYYYYmmdd_HHMMSS(date: any): string;
+export function toYYYYmmddHHMMSS_NoSep(date: any): any;
+export function toDateEnd(date: any): Date;
+export function toDateBegin(date: any): Date;
+export function addDay(date: any, day: any): Date;
+export function addHour(date: any, hour: any): Date;
+export function toSeconds(date: any): number;
+export const SECOND: 1000;
+export const MINUTE: number;
+export const HOUR: number;
+export const DAY: number;
