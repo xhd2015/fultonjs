@@ -40,6 +40,7 @@ export class AsyncCacher {
     //   options.refreshLimit      refresh times limit,no limit if <= 0
     //   options.onCacheLoaded(args,v)
     //   options.onCacheEvicted(args,v)
+    //   optoins.shouldCacheNull   should we cache null? default false
     constructor(loader, ttl, onCacheLoaded, options) { // old signature: (loader,ttl,onCacheLoaded)
         if (typeof onCacheLoaded !== 'function' && !options) {
             options = onCacheLoaded
@@ -66,6 +67,8 @@ export class AsyncCacher {
             }
         }
         this._onCacheEvicted = options?.onCacheEvicted
+        this._onRefresherRun = options?.onRefresherRun
+        this._shouldCacheNull = options?.shouldCacheNull === true
         this._size = 0
     }
     async get(args) {
@@ -82,6 +85,12 @@ export class AsyncCacher {
             }
             // console.log("before resolve,this.cache:", this.cache)
             entry.initResolver = this._loadOne(args).then(async v => {
+                // initial load is nil, so we do not cache it
+                if (!this._shouldCacheNull && (v === null || v === undefined)) {
+                    this._deleteKey(key)
+                    // return, but do not cache
+                    return v
+                }
                 // console.log("get, initialize loaded: key = ", key)
                 entry.status = StatusLoaded
                 entry.value = v
@@ -93,6 +102,9 @@ export class AsyncCacher {
                         if (this._refreshLimit > 0 && i >= this._refreshLimit) {
                             entry.refresher = null // clear
                             return
+                        }
+                        if(this._onRefresherRun){
+                            this._onRefresherRun(i)
                         }
                         this._loadOne(args).then(v => {
                             entry.time = Date.now()
@@ -129,6 +141,12 @@ export class AsyncCacher {
                 // console.log("get, expired: key = ", key)
                 // expired, return old value, but trigger load
                 entry.initResolver = this._loadOne(args).then(async v => {
+                    // later load is null, so do not cache it
+                    if (!this._shouldCacheNull && (v === null || v === undefined)) {
+                        this._deleteKey(key)
+                        // return, but do not cache
+                        return v
+                    }
                     entry.value = v
                     entry.status = StatusLoaded
                     entry.time = Date.now()
@@ -146,7 +164,7 @@ export class AsyncCacher {
             return entry.value
         } else if (entry.status === StatusInitLoading) {
             // console.log("get, status is StatusInitLoading: key = ", key)
-            return entry.initResolver // will be resolved
+            return await entry.initResolver // will be resolved
         } else if (entry.status === StatusExpireLoading) {
             // console.log("get, status is StatusExpireLoading: key = ", key)
             return entry.value // return old value
@@ -224,6 +242,36 @@ export class AsyncCacher {
                 await this.onCacheLoaded(args, v)
             } catch (e) {
                 console.error("on cache loaded callback error:", e)
+            }
+        }
+    }
+
+    /**
+     * 
+     * @public
+     * @returns 
+     */
+    get size() {
+        return this._size
+    }
+    /**
+     * 
+     * @public
+     * @returns 
+     */
+    get keys() {
+        return Object.keys(this.cache)
+    }
+    /**
+     * stop all refreshers, if any
+     * @public
+     * @returns 
+     */
+    destroy() {
+        for(let key in this.cache){
+            const entry = this.cache[key]
+            if(entry?.refresher){
+                clearTimeout(entry.refresher)
             }
         }
     }
