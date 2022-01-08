@@ -1,9 +1,0 @@
-{
-    "compilerOptions": {
-      "target": "es5",
-      "module": "commonjs",
-      "outDir": "out",
-      "sourceMap": true,
-    },
-    "files": ["index.ts","mock.ts","proto.ts","test.ts"]
-  }

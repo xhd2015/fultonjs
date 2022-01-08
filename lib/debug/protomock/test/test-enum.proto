@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package protomock.test;
+
+
+enum TestEnum {
+    NONE = 0;
+    NORMAL = 1;
+    OTHER = 3;
+}
+
+message Inside {
+    TestEnum test = 1;
+}
+
+message WrapperReq {
+    int64 id = 1;
+    TestEnum test = 2;
+    map<int64,TestEnum> map_test = 3;
+    repeated TestEnum arr_test = 4;
+    map<int64,Inside> map_inside = 5;
+    Inside inside = 6;
+    repeated Inside insides = 7;
+}
+message WrapperResp {
+    int64 id = 1;
+    TestEnum test = 2;
+}
+service TestService {
+    rpc Wrapp (WrapperReq) returns (WrapperResp) {
+    }
+}

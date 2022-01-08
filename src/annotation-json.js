@@ -1,81 +1,77 @@
-export const ANNOTATION = Symbol.for("annotation");
-
+export const ANNOTATION = Symbol('annotation');
 // stringify with annotations
 // options:{
 // }
 export function stringify(object, options) {
-    return new Stringifer(object, options).output()
+    return new Stringifer(object, options).output();
 }
-
-const ARR_INLINE_MAXLEN = 32
-
+const ARR_INLINE_MAXLEN = 32;
 class Stringifer {
     // options
     //  
     constructor(object, options) {
         // annotationKey can also be "$$annotation", "$$comment", just for exampe
-        const { annotation, preserveUndefined, pretty, annotationKey } = options || {}
+        const { annotation, preserveUndefined, pretty, annotationKey } = options || {};
         // when annotations present, pretty is implied
-        this._annotation = annotation
-        this._annotationKey = annotationKey || ANNOTATION
-        this._preserveUndefined = preserveUndefined
-        this._pretty = pretty
-        this._indent = "    "
-        this._object = object
-        this._level = 0
-        this._curAnnotation = this._annotation
+        this._annotation = annotation;
+        this._annotationKey = annotationKey || ANNOTATION;
+        this._preserveUndefined = preserveUndefined;
+        this._pretty = pretty;
+        this._indent = "    ";
+        this._object = object;
+        this._level = 0;
+        this._curAnnotation = this._annotation;
     }
     // return a string
     output() {
-        this._level = 0
-        this._curAnnotation = this._annotation
-        const jsonValue = this.object(this._object)
-        if (!this._annotation?.[this._annotationKey] || this._isScalar(jsonValue)) {
-            return jsonValue
+        var _a;
+        this._level = 0;
+        this._curAnnotation = this._annotation;
+        const jsonValue = this.object(this._object);
+        if (!((_a = this._annotation) === null || _a === void 0 ? void 0 : _a[this._annotationKey]) || this._isScalar(jsonValue)) {
+            return jsonValue;
         }
-        return this._joinAnnotation(jsonValue, this._annotation, false)
+        return this._joinAnnotation(jsonValue, this._annotation, false);
     }
-
     // @private
     object(obj) {
+        var _a;
         if (obj === null) {
-            return 'null'
+            return 'null';
         }
-
         // annotation is processed by parent, not by itself
-
         // only complex object needs indent
-        const type = typeof obj
+        const type = typeof obj;
         switch (type) {
             case 'undefined':
-                return this._preserveUndefined ? 'null' : undefined // should be deleted from parent
+                return this._preserveUndefined ? 'null' : undefined; // should be deleted from parent
             case 'string':
             case 'number':
             case 'boolean':
-                return JSON.stringify(obj)
+                return JSON.stringify(obj);
             case 'bigint':
-                return obj.toString()
+                return obj.toString();
             default:
-                const indent = this._curIndent
-                const curAnnotation = this._curAnnotation
+                const indent = this._curIndent;
+                const curAnnotation = this._curAnnotation;
                 if (Array.isArray(obj)) {
-                    const elms = []
-                    this._level++
+                    const elms = [];
+                    this._level++;
                     for (let i = 0; i < obj.length; i++) {
-                        const e = obj[i]
-                        const anno = this._curAnnotation?.[i]
+                        const e = obj[i];
+                        const anno = (_a = this._curAnnotation) === null || _a === void 0 ? void 0 : _a[i];
                         // for undefined
                         // undefined must be represented as null in array, no matter _preseveUndefined or not
-                        let valJSON = "null"
+                        let valJSON = "null";
                         if (e !== undefined) {
-                            this._curAnnotation = anno
-                            valJSON = this.object(e)
-                            this._curAnnotation = curAnnotation
+                            this._curAnnotation = anno;
+                            valJSON = this.object(e);
+                            this._curAnnotation = curAnnotation;
                         }
-                        elms.push((this._isPretty ? (indent + this._indent) : '') + this._joinAnnotation(valJSON, anno, i < obj.length - 1))
+                        elms.push((this._isPretty ? (indent + this._indent) : '') + this._joinAnnotation(valJSON, anno, i < obj.length - 1));
                     }
                     // restore level
-                    this._level--
+                    this._level--;
                     // let inline = true
                     // if (this._isPretty) {
                     //     let totalLength = (elms.length - 1) + 2 + indent.length
@@ -90,91 +86,85 @@ class Stringifer {
                     //     elms[i] = indent + this._indent + elms[i]
                     // }
                     if (!this._isPretty) {
-                        return "[" + elms.join("") + "]"
+                        return "[" + elms.join("") + "]";
                     }
                     // indent is made by parent
-                    return "[\n" + elms.join("\n") + "\n" + indent + "]"
+                    return "[\n" + elms.join("\n") + "\n" + indent + "]";
                 }
                 if (obj instanceof Date) {
-                    return JSON.stringify(obj)
+                    return JSON.stringify(obj);
                 }
-
                 // object
-                const kv = []
-                const savedLevel = this._level
-                let objKeys = Object.keys(obj)
+                const kv = [];
+                const savedLevel = this._level;
+                let objKeys = Object.keys(obj);
                 // filter null values
                 if (!this._preserveUndefined) {
-                    objKeys = objKeys.filter(k => obj[k] !== undefined)
+                    objKeys = objKeys.filter(k => obj[k] !== undefined);
                 }
                 for (let i = 0; i < objKeys.length; i++) {
-                    const key = objKeys[i]
-                    const value = obj[key]
+                    const key = objKeys[i];
+                    const value = obj[key];
                     if (value === undefined) {
                         if (!this._preserveUndefined) {
-                            continue
+                            continue;
                         }
                     }
                     this._level = 0;
                     const keyJSON = this.object(key);
                     this._level = savedLevel + 1;
-                    const anno = curAnnotation?.[key]
-                    this._curAnnotation = anno
+                    const anno = curAnnotation === null || curAnnotation === void 0 ? void 0 : curAnnotation[key];
+                    this._curAnnotation = anno;
                     const jsonValue = this.object(obj[key]);
-                    const valueWithComment = this._joinAnnotation(jsonValue, anno, i < objKeys.length - 1)
-
+                    const valueWithComment = this._joinAnnotation(jsonValue, anno, i < objKeys.length - 1);
                     kv.push((this._isPretty ? (indent + this._indent) : '') + keyJSON + ":" + valueWithComment);
                 }
-                this._curAnnotation = curAnnotation
+                this._curAnnotation = curAnnotation;
                 this._level = savedLevel;
-
                 if (!this._isPretty) {
-                    return "{" + kv.join("") + "}"
+                    return "{" + kv.join("") + "}";
                 }
-                return "{\n" + kv.join("\n") + "\n" + indent + "}"
+                return "{\n" + kv.join("\n") + "\n" + indent + "}";
         }
     }
-
-
     get _isPretty() {
-        return this._annotations || this._pretty
+        return this._pretty;
     }
     get _curIndent() {
-        return this._isPretty ? this._indent.repeat(this._level) : ''
+        return this._isPretty ? this._indent.repeat(this._level) : '';
     }
     get _lastIndent() {
-        return this._isPretty ? this._indent.repeat(this._level - 1) : ''
+        return this._isPretty ? this._indent.repeat(this._level - 1) : '';
     }
-
     _makeComment(text) {
-        return this._isPretty ? `// ${text}` : `/* ${text} */`
+        return this._isPretty ? `// ${text}` : `/* ${text} */`;
     }
     _isScalar(jsonValue) {
-        return !(jsonValue?.[0] === '{' || jsonValue?.[0] === '[')
+        return !((jsonValue === null || jsonValue === void 0 ? void 0 : jsonValue[0]) === '{' || (jsonValue === null || jsonValue === void 0 ? void 0 : jsonValue[0]) === '[');
     }
     _joinAnnotation(jsonValue, annotation, needSeparator) {
-        const commentText = annotation?.[this._annotationKey]
-        const sep = (needSeparator ? ',' : '')
+        const commentText = annotation === null || annotation === void 0 ? void 0 : annotation[this._annotationKey];
+        const sep = (needSeparator ? ',' : '');
         if (!commentText) {
             return jsonValue + sep;
         }
         if (jsonValue.startsWith("{\n")) {
             // insert after {\n
-            return "{" + this._makeComment(commentText) + "\n" + jsonValue.slice("{\n".length) + sep
+            return "{" + this._makeComment(commentText) + "\n" + jsonValue.slice("{\n".length) + sep;
         }
         if (jsonValue.startsWith("[\n")) {
             // insert after [\n
-            return "[" + this._makeComment(commentText) + "\n" + jsonValue.slice("{\n".length) + sep
+            return "[" + this._makeComment(commentText) + "\n" + jsonValue.slice("{\n".length) + sep;
         }
         if (jsonValue.startsWith("{")) {
             // insert after {
-            return "{" + " /* " + commentText + " */ " + jsonValue.slice("{".length) + sep
+            return "{" + " /* " + commentText + " */ " + jsonValue.slice("{".length) + sep;
         }
         if (jsonValue.startsWith("[")) {
             // insert after [\n
-            return "[" + " /* " + commentText + " */ " + jsonValue.slice("[".length) + sep
+            return "[" + " /* " + commentText + " */ " + jsonValue.slice("[".length) + sep;
         }
         // scalar values
-        return `${jsonValue}${sep} ${this._makeComment(commentText)}`
+        return `${jsonValue}${sep} ${this._makeComment(commentText)}`;
     }
 }
