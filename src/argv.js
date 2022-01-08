@@ -170,7 +170,7 @@ export function splitCommand(cmd) {
 
 // parse into commands, ; is used to separate multiple commands
 // example: parseCommands('get a;set a', keepCommand=false) => [["get","a"]], ["set","a"]]
-// example: parseCommands('get a;set a', keepCommand=true) => [{command:"get","a", split:["get","a"]}, {"command":"set a", split:["set","a"]}]
+// example: parseCommands('get a;set a', keepCommand=true) => [{command:"get a", split:["get","a"]}, {"command":"set a", split:["set","a"]}]
 export function parseCommands(cmdStr, keepCommand, keepEnd) {
     if (!keepCommand) {
         let parsed = splitCommandHelper(cmdStr, false)

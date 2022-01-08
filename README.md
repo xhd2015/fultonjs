@@ -15,3 +15,9 @@ If the scope does not exists, go to https://xxx.npm.org/scope to register one.
 # after which *.d.ts will be generated next to *.js
 npx typescript
 ```
+
+# directory structure
+```
+lib contains all generated code from src
+src/node is copied verbatim into lib/node
+```

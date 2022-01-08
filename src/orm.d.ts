@@ -16,7 +16,7 @@ export class ORM {
     };
     quoteName(name: any): any;
     insert(model: any): Promise<any>;
-    insertMany(models: any): Promise<any[]>;
+    insertMany(models: any): Promise<any>;
     _getUpdateSQL(model: any, where: any, options: any): {
         sql: string;
         args: any[];
@@ -26,10 +26,10 @@ export class ORM {
         args: any[];
     };
     update(model: any, where: any, options: any): Promise<any>;
-    updateMany(data: any, options: any): Promise<[any, any, any, any, any, any, any, any, any, any]>;
+    updateMany(data: any, options: any): Promise<any>;
     deleteWhere(where: any): Promise<any>;
     insertOrUpdate(model: any, where: any, options: any): Promise<any>;
-    insertOrUpdateMany(tx: any, key: any, data: any, idField: any, ids: any, options: any): Promise<[any, any, any, any, any, any, any, any, any, any]>;
+    insertOrUpdateMany(tx: any, key: any, data: any, idField: any, ids: any, options: any): Promise<any>;
     _doInsertOrUpdate(tx: any, idField: any, model: any, conditions: any, args: any, id: any, createPreset: any, updatePreset: any, options: any): Promise<{
         type: string;
         id: any;

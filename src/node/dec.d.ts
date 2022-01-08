@@ -1,0 +1,10 @@
+export function hash(data: any, code: any): any;
+export function hashsha256(data: any): any;
+export function randomNumber(): string;
+export function randomString(): any;
+export function randomShortString(): any;
+export function signJWT(payload: any, secret: any): any;
+export function validateJWT(token: any, secret: any): any;
+export function base64DecodeUrlsafe(s: any): any;
+export function base64EncodeUrlSafe(s: any): any;
+export function decodeJWTPayload(token: any): any;

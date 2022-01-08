@@ -10,12 +10,16 @@ export type ServiceMethodsPayload = {
     [name: string]: () => MethodPayload
 };
 
+export const PATH_MAP_KEY = Symbol.for('key')
+export const PATH_MAP_VALUE = Symbol.for('value')
+type PathType = Array<string | number | typeof PATH_MAP_KEY | typeof PATH_MAP_VALUE>
 
 const enum MethodType {
     request,
     response
 }
 const MAX_STACK_SIZE = 3;
+
 
 /**
  * Mock method response
@@ -216,7 +220,7 @@ function mockScalar(type: string, fieldName: string): any {
     }
 }
 
-function mockScalarZero(type: string, fieldName: string): any {
+function mockScalarZero(type: string, path: PathType): any {
     switch (type) {
         case 'string':
             return '';
@@ -254,6 +258,10 @@ function mockScalarZero(type: string, fieldName: string): any {
             return null;
     }
 }
+function mockEnumZero(enumType: Enum, path: PathType): number {
+    const enumKey = Object.keys(enumType.values)[0];
+    return enumType.values[enumKey];
+}
 
 /**
  * Tries to guess a mock value from the field name.
@@ -270,26 +278,47 @@ function interpretMockViaFieldName(fieldName: string): string {
     return 'Hello';
 }
 
-interface MockOptions {
-    mockScalar?: (type: string) => any
-    mockStringField?: (fieldName: string) => string
-    mockEnum?: (enumType: Enum) => number
-}
-const defaultMockOptions: MockOptions = {
-    mockScalar: (type: string) => mockScalarZero(type, ""),
-    mockStringField: (fieldName: string): string => {
-        return ""
-    },
-    mockEnum: (enumType: Enum): number => {
-        const enumKey = Object.keys(enumType.values)[0];
-        return enumType.values[enumKey];
+export function mockEnumWithComments(enumType: Enum, path: PathType): { value: number, toJSON?: any } {
+    const value = mockEnumZero(enumType, path)
+    return {
+        value,
+        toJSON() {
+            const comment = Object.keys(enumType.values).map(key => [key, enumType.values[key]]).map(([k, v]) => `${v}=${k}`).join(" ")
+            // place some value that is impossible to be detected
+            return " // "
+        }
     }
 }
 
+export function mockScalarWithMappingComments(baseMocker?: (enumType: Enum, path: PathType) => number) {
+    baseMocker = baseMocker || mockEnumZero
+    return (enumType: Enum, path: PathType): any => {
+
+    }
+}
+
+interface MockOptions {
+    mockScalar?: (type: string, path: PathType) => any
+    mockEnum?: (enumType: Enum, path: PathType) => number | { value: number, toJSON?: any }
+}
+const defaultMockOptions: MockOptions = {
+    mockScalar: mockScalarZero,
+    mockEnum: mockEnumZero,
+}
+
+
 export class Mocker {
     options: MockOptions;
+    stackDepth: StackDepth;
+    path: PathType;
+
     constructor(options?: MockOptions) {
         this.options = { ...defaultMockOptions, ...options }
+        this.resetStackDeps()
+    }
+    resetStackDeps() {
+        this.stackDepth = {}
+        this.path = []
     }
 
     // the type must be resolved first
@@ -337,24 +366,17 @@ export class Mocker {
             return methods;
         }, {});
     }
-
-    mockEnum(type: Enum) {
-        return this.options.mockEnum(type)
-    }
-    mockScalar(type: string) {
-        return this.options.mockScalar(type)
-    }
     /**
     * Mock a field type
     */
-    mockTypeFields(type: Type, stackDepth: StackDepth = {}): object {
-        if (stackDepth[type.name] > MAX_STACK_SIZE) {
+    mockTypeFields(type: Type): object {
+        if (this.stackDepth[type.name] > MAX_STACK_SIZE) {
             return {};
         }
-        if (!stackDepth[type.name]) {
-            stackDepth[type.name] = 0;
+        if (!this.stackDepth[type.name]) {
+            this.stackDepth[type.name] = 0;
         }
-        stackDepth[type.name]++;
+        this.stackDepth[type.name]++;
 
         const fieldsData: { [key: string]: any } = {};
 
@@ -363,9 +385,9 @@ export class Mocker {
 
             if (field.parent !== field.resolvedType) {
                 if (field.repeated) {
-                    data[field.name] = [this.mockField(field, stackDepth)];
+                    data[field.name] = [this.mockField(field)];
                 } else {
-                    data[field.name] = this.mockField(field, stackDepth);
+                    data[field.name] = this.mockField(field);
                 }
             }
 
@@ -376,7 +398,7 @@ export class Mocker {
     /**
      * Mock a field
      */
-    mockField(field: Field, stackDepth?: StackDepth): any {
+    mockField(field: Field): any {
         field = field.resolve()
         if (field instanceof MapField) {
             let mockPropertyValue = this.mockType(field.type || field.resolvedType);
@@ -392,5 +414,14 @@ export class Mocker {
             fields[oneOf.name] = this.mockField(oneOf.fieldsArray[0]);
             return fields;
         }, {});
+    }
+
+    // path: [a,b,c,0,MAP_KEY,MAP_VALUE]
+    // simple types
+    mockEnum(type: Enum) {
+        return this.options.mockEnum(type, this.path)
+    }
+    mockScalar(type: string) {
+        return this.options.mockScalar(type, this.path)
     }
 }

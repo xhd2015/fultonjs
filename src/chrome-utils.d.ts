@@ -11,7 +11,7 @@ export class TimerTask {
     constructor(interval: any, limit: any, action: any, taskName: any);
     limit: any;
     interval: any;
-    taskID: NodeJS.Timeout;
+    taskID: number;
     action: any;
     taskName: any;
     finished: boolean;

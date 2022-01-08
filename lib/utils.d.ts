@@ -8,5 +8,5 @@ export function remap(obj: any, f: any): {};
 export function keyValueRemap(obj: any, f: any): {};
 export function valueRemap(obj: any, f: any): {};
 export function remapValue(obj: any, f: any): {};
-export function range(n: any): number[];
+export function range(n: any): any;
 export function methods(o: any, includePrivate: any): {};
