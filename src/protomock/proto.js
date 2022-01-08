@@ -70,7 +70,8 @@ export function walkServices(proto, onService) {
                         nestedType.name
                     ];
                     const fullyQualifiedServiceName = serviceName.join('.');
-                    onService(nestedType, get(ast, serviceName), fullyQualifiedServiceName);
+                    const getFn = get.default || get;
+                    onService(nestedType, getFn(ast, serviceName), fullyQualifiedServiceName);
                 }
             });
         }

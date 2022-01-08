@@ -99,8 +99,8 @@ export function walkServices(proto: Proto, onService: (service: Service, def: an
           ];
 
           const fullyQualifiedServiceName = serviceName.join('.');
-
-          onService(nestedType as Service, get(ast, serviceName), fullyQualifiedServiceName);
+          const getFn = get.default || get
+          onService(nestedType as Service, getFn(ast, serviceName), fullyQualifiedServiceName);
         }
       });
     }

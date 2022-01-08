@@ -299,7 +299,7 @@ export function transferCode(code, options) {
 function loadCode(______, _______) {
     // protect contextual code from being modified by the code
     if (______) {
-        return eval(trasferCode('(' + ______ + ")", { ..._______, removeSemicolon: true }))
+        return eval(transferCode('(' + ______ + ")", { ..._______, removeSemicolon: true }))
     }
     return undefined
 }
