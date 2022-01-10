@@ -17,12 +17,16 @@
     // next to the .js files
     //   "outDir": "dist"
     "target": "es5",
+    "lib": [
+      "ES2021",
+      "ES2021.String"
+    ],
     // "target": "es6",
     "module": "commonjs",
     // "module": "ES2015",
     "outDir": "src/debug",
     "sourceMap": true,
-    "moduleResolution":"Node",
+    "moduleResolution": "Node",
     "rootDir": "./src/debug"
   },
   "exclude": []

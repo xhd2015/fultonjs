@@ -18,11 +18,15 @@
     //   "outDir": "dist"
     // "target": "es5",
     "target": "es6",
+    "lib": [
+      "ES2021",
+      "ES2021.String"
+    ],
     // "module": "commonjs",
     "module": "ES2015",
     "outDir": "src",
     // "sourceMap": true,
-    "moduleResolution":"Node",
+    "moduleResolution": "Node",
     "rootDir": "./src"
   },
   "exclude": []
