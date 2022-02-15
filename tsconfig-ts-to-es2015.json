@@ -20,7 +20,8 @@
     "target": "es6",
     "lib": [
       "ES2021",
-      "ES2021.String"
+      "ES2021.String",
+      "DOM"
     ],
     // "module": "commonjs",
     "module": "ES2015",

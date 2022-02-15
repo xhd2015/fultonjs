@@ -1,0 +1,1 @@
+2022-02-15 09:25:23.428439      [2872de99a4b8064d4ae5480b2bf6fe74] [INFO]       [rpc_log_wrapper.go/86: 1] Service Called Request: {serviceName:PayReadManager.QueryConfirmTime, clientHost:100.95.111.48, clientService:credit.funding.platform, req:credit_user_id:1008104115 loan_id:"2021120918373811008104115000101639018228078" }
