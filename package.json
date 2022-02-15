@@ -1,6 +1,6 @@
 {
   "name": "@fultonjs/common",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "fultonjs common",
   "main": "index.js",
   "scripts": {
