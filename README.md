@@ -1,3 +1,31 @@
+# files layout
+```
+src/       # contains *.js, *.ts. *.js is ES6 syntax, for browser usage
+  A.js     #
+  B.ts     # 
+  B.js     # generated from yy.ts using
+lib/       # contains commonjs file, for node usage
+  C.js     #
+```
+
+generally all coe should be written with B.ts. But for those like process, filesystem, commonjs is used.
+
+B.ts to B.js:
+```bash
+npm run genFromTS
+```
+
+A.js to C.js:
+```bash
+npm run generate
+```
+
+# debug Typescript
+
+# debug ES6
+
+# local debug
+
 # generat ES-to-node files
 ```bash
 npm run generate
