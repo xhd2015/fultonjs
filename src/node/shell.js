@@ -133,10 +133,10 @@ function spawnSSH(sshHost, cmd, sshOptions, options) {
 	}
 	const sshArgs = []
 	// timeout in seconds
-	if(sshOptions?.ConnectTimeout){
+	if (sshOptions?.ConnectTimeout) {
 		sshArgs.push("-o", `ConnectTimeout ${sshOptions.ConnectTimeout}`)
 	}
-	return child_process.spawn("ssh", [...sshArgs,sshHost, cmd], options)
+	return child_process.spawn("ssh", [...sshArgs, sshHost, cmd], options)
 }
 
 // cmd: executable binary or script
@@ -187,6 +187,8 @@ function sleep(n) {
 //   options.cwd:  working director
 // example: 
 //   await exec(['bash','-c',''])
+// returns: output string, or if error {errcode,cmd,message}
+// you can check if(res.errcode){ /* handle error */}
 async function exec(cmd, options) {
 	if (cmd instanceof Array) {
 		cmd = escape(cmd)
@@ -202,6 +204,9 @@ async function exec(cmd, options) {
 				if (err) {
 					err.cmd = cmd
 					err.message = `command failed(exit status not 0): ${cmd}, caused by ${err.message}, stdErr:${errStr}, stdout:${outStr}`
+					if (err.errcode === null || err.errcode === undefined) {
+						err.errcode = 1
+					}
 					resolve(err) // use resolve instead of reject, because we want it to be normal
 					return
 				}
@@ -306,6 +311,9 @@ async function isFile(f) {
 async function isDir(d) {
 	let dirStat = await stat(d)
 	return dirStat && dirStat.isDirectory()
+}
+async function mkdir(path) {
+	await fs.promises.mkdir(path, { recursive: false })
 }
 async function mkdir_p(path) {
 	await fs.promises.mkdir(path, { recursive: true })
@@ -429,6 +437,7 @@ module.exports = {
 	isFile,
 	isDir,
 	dirname,
+	mkdir,
 	mkdir_p,
 	stat,
 	touch,

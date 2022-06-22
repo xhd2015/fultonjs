@@ -74,7 +74,7 @@ class GitRepo {
 		let newRepo = false
 		if (!freeRepo) {
 			if (this.limit > 0 && repoCount > this.limit) {
-				throw new Error("repository busy")
+				throw new Error("repository busy, please try again later.")
 				return
 			}
 			// generate random directory
@@ -87,11 +87,14 @@ class GitRepo {
 			if (!await shell.exists(path.join(dir, ".git"))) {
 				await shell.exec(`rm -rf ${e(dir)} && mkdir -p ${e(dir)}`)
 				newRepo = true
+			} else {
+				// rm -rf previouse .git/index.lock
+				await shell.exec(`rm -rf ${e(dir)}/.git/index.lock`)
 			}
 		}
 
 		let dirLock = dir + ".lock"
-		await shell.touch(dirLock);
+		await shell.mkdir(dirLock); // may fail
 
 		let cmd
 		if (newRepo) {
@@ -113,6 +116,7 @@ class GitRepo {
 				if (!closed) {
 					closed = true
 					await shell.rm_rf(dirLock)
+					await shell.rm_rf(path.join(dir, ".git", "index.lock"))
 				}
 			}
 		}

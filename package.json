@@ -9,8 +9,8 @@
     "generate2": "npx babel --config-file ./babel.config.json  --out-dir lib lib/es",
     "test": "echo \"Error: no test specified\" && exit 1",
     "genTypes": "npx tsc -p tsconfig.json &>/dev/null",
-    "genFromTS":"npx tsc -p tsconfig-ts-to-es2015.json;: 'genereate *.js in place with *.ts'",
-    "genFromTSDebug":"cp -R src/*.ts src/*.js src/debug/;cp -R src/protomock/ src/debug/protomock/;npx tsc -p tsconfig-ts-to-node-debug.json;: 'genereate *.js in place with *.ts, to src/debug'"
+    "genFromTS": "npx tsc -p tsconfig-ts-to-es2015.json;: 'genereate *.js in place with *.ts'",
+    "genFromTSDebug": "cp -R src/*.ts src/*.js src/debug/;cp -R src/protomock/ src/debug/protomock/;npx tsc -p tsconfig-ts-to-node-debug.json;: 'genereate *.js in place with *.ts, to src/debug'"
   },
   "author": "xhd2015",
   "license": "ISC",
@@ -34,7 +34,8 @@
     "pm2": "^4.5.1",
     "protobufjs": "^6.11.2",
     "redis": "^3.0.2",
-    "voca": "^1.4.0"
+    "voca": "^1.4.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.10",
