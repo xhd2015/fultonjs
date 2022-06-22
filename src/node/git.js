@@ -102,7 +102,7 @@ class GitRepo {
 		} else {
 			// git clean:https://coderwall.com/p/g16jpq/keep-your-git-directory-clean-with-git-clean-and-git-trash
 			// use git status to test first.in some cases the repo remains at an incosistent status
-			cmd = await shell.exec(`set -e;cd ${e(dir)}; if ! git status &>/dev/null;then cd ..;rm -rf ${e(dir)};git clone --branch ${e(branch)} ${e(this.repo)} ${e(dir)};cd ${e(dir)};fi;git clean -x -f -d --quiet ; git reset --hard ; git checkout ${e(branch)} ;git pull origin ${e(branch)}`)
+			cmd = await shell.exec(`repodir=${e(dir)};set -e;cd "$repodir"; if ! git status &>/dev/null;then cd ..;rm -rf "$repodir";git clone --branch ${e(branch)} ${e(this.repo)} "$repodir";cd "$repodir";fi;rm -rf .git/index.lock;git clean -x -f -d --quiet ;rm -rf .git/index.lock; git reset --hard ; rm -rf .git/index.lock;git checkout ${e(branch)} ;rm -rf .git/index.lock;git pull origin ${e(branch)}`)
 		}
 		if (cmd instanceof Error) {
 			throw cmd
