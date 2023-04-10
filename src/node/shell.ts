@@ -58,28 +58,31 @@ export export function cmdDir() {
 export function cmdRel(path) {
 	return require("path").join(cmdDir(), path)
 }
+export async function runBash(cmd, options) {
+	return await spawnStdBash(cmd, options)
+}
 // spanwStdBash
 // returns the command
-export function spawnStdBash(cmd, options) {
-	let c = child_process.spawn("/bin/bash", ["-c", cmd], options)
-	c.stdout.on('data', writestdout)
-	c.stderr.on('data', writestderr)
-	return c
+export async function spawnStdBash(cmd, options) {
+	return await spawnStd("bash", ["-ec", cmd], options)
 }
 // execute the cmd and connect them to stderr & stdout
 // return the exit code
 export async function spawnStd(cmd, args, options) {
 	// spawn("ls", ["-l","-h"])
 	let c = child_process.spawn(cmd, args, options)
-	c.stdout.on('data', writestdout)
-	c.stderr.on('data', writestderr)
+	c.stdout.pipe(process.stdout)
+	c.stderr.pipe(process.stderr)
+
 	return await new Promise(function (resolve, reject) {
-		c.on('error', function (e) {
-			reject(e)
-		})
-		c.on('close', function (code) {
-			resolve(code)
-		})
+		c.on("exit", (code) => {
+			if (code === 0) {
+				resolve(0);
+				return;
+			}
+			reject(new Error(`exit: ${code}`));
+		});
+
 	})
 }
 
@@ -314,6 +317,12 @@ export async function isDir(d) {
 }
 export async function mkdir(path) {
 	await fs.promises.mkdir(path, { recursive: false })
+}
+export function pwd(): string {
+	return process.cwd()
+}
+export function home(): string {
+	return process.env["HOME"]
 }
 export async function mkdir_p(path) {
 	await fs.promises.mkdir(path, { recursive: true })
