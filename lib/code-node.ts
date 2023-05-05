@@ -5,7 +5,7 @@
 // transfer:
 //   npm install --save-dev @babel/cli @babel/preset-env
 //   npx babel --config-file ./lib/es/babel.config.json lib/es/code.js --out-file lib/code.js
-import * as Babel from "@babel/standalone/babel"
+import * as Babel from "@babel/core"
 import generate from "@babel/generator";
 
 export function parseAst(code) {

@@ -5,18 +5,8 @@
 // transfer:
 //   npm install --save-dev @babel/cli @babel/preset-env
 //   npx babel --config-file ./lib/es/babel.config.json lib/es/code.js --out-file lib/code.js
-import * as BabelStandalone from "@babel/standalone/babel"
+import * as Babel from "@babel/standalone/babel"
 import generate from "@babel/generator";
-let Babel = BabelStandalone
-// not browser?
-if (typeof window === 'undefined') {
-    // use server side babel/core
-    Babel = require("@babel/core")
-} else {
-    // in browser, must be imported via *
-    // import * as BabelStandalone from "@babel/standalone/babel"
-    Babel = BabelStandalone || (window as any).Babel
-}
 
 export function parseAst(code) {
     // const {
