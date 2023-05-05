@@ -7,6 +7,7 @@
 //   npx babel --config-file ./lib/es/babel.config.json lib/es/code.js --out-file lib/code.js
 import * as Babel from "@babel/core";
 import generate from "@babel/generator";
+import * as JSONBigInt from 'json-bigint';
 export function parseAst(code) {
     // const {
     //     envName = (0, _environment.getEnv)(),
@@ -287,6 +288,15 @@ export function prettyJSON(code) {
 }
 export function compressJSON(code) {
     return transferJSON(code, { compress: true });
+}
+export function parseJSONSafe(code) {
+    return JSONBigInt.parse(code);
+}
+export function prettyJSONSafe(object) {
+    return JSONBigInt.stringify(object, null, "    ");
+}
+export function compressJSONSafe(object) {
+    return JSONBigInt.stringify(object);
 }
 // transferJSON solves the bigint problem in javascript
 // examples:
