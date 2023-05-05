@@ -208,18 +208,6 @@ function pluginOfVisitor(visitor) {
     };
 }
 export const ANNOTATION = Symbol.for("annotation");
-// transfer large number to string in code
-// options: {
-//    removeSemicolon:false,
-//    object: false,          // whether treat the code as an object expression,if true, will add '()' to surrend code
-//    format: false,          // whether to format the output code
-//    bigint:'string'|'bigint'|undefined  // string is preferred, it coverts large number xxx into "xxx"
-//    annotation: {}          //  {a:{b:{[ANNOTATION]:"// some comment", "c":{...}}}}
-//                            //       example: {"a":{"b":{[ANNOTATION]:"/* something */"}}
-//    debug:false
-//  }
-// Babel transform '(...)' into '();'
-// return:
 export function transferCode(code, options) {
     let { bigint, object, format, annotation, debug } = options || {};
     const needTransfrom = bigint || format;
@@ -288,6 +276,108 @@ export function transferCode(code, options) {
         }
     }
     return code;
+}
+export function tryPrettyJSON(code) {
+    try {
+        return prettyJSON(code);
+    }
+    catch (e) {
+        return code;
+    }
+}
+export function tryCompressJSON(code) {
+    try {
+        return compressJSON(code);
+    }
+    catch (e) {
+        return code;
+    }
+}
+export function prettyJSON(code) {
+    return transferJSON(code, { compress: false });
+}
+export function compressJSON(code) {
+    return transferJSON(code, { compress: true });
+}
+// transferJSON solves the bigint problem in javascript
+// examples:
+// > JSON.parse('{"a":9999999999999999,"b":  9999999999999999}')
+//   { a: 10000000000000000, b: 10000000000000000 }
+// > console.log(a.transferJSON('{"a":9999999999999999,"b":  9999999999999999}',{compress:true}))
+//   {"a":9999999999999999,"b":9999999999999999}
+// > console.log(a.transferJSON('{"a":9999999999999999,"b":  9999999999999999}'))
+//   {
+//     "a": 9999999999999999,
+//     "b": 9999999999999999
+//   }
+export function transferJSON(code, options) {
+    const debug = false;
+    const format = true;
+    const bigint = true;
+    const compress = !!(options === null || options === void 0 ? void 0 : options.compress);
+    // let { bigint, object, format, annotation, debug } = options || {}
+    // const needTransfrom = bigint || format
+    // if (!needTransfrom) {
+    //     return code
+    // }
+    const plugins = [];
+    if (bigint) {
+        // plugins.push(pluginOfVisitor({
+        //     NumericLiteral(path) {
+        //         // only NumericLiteral has extra.raw, extra.rawValue
+        //         const { node } = path
+        //         // convert big ast into code
+        //         // only NumericLiteral has extra.raw, extra.rawValue
+        //         let raw = node.extra.raw
+        //         if (isBignumber(raw)) {
+        //             node.extra.raw += 'n'
+        //         }
+        //     }
+        // }))
+    }
+    // if (annotation) {
+    //     // plugins.push(pluginOfVisitor(new AnnotationVisitor(annotation)))
+    //     plugins.push(pluginOfVisitor(makeAnnotationVisitor(annotation)))
+    // }
+    const astCode = "(" + code + ")";
+    // parse ast first
+    let { ast } = Babel.transform(astCode, {
+        ast: true,
+        configFile: false,
+        babelrc: false,
+        plugins,
+    });
+    if (debug) {
+        //     plugins.push(pluginOfVisitor(debugVisitor))
+        traverseAst(ast, (node) => {
+            console.log("[DEBUG] visiting:", node.type);
+        });
+    }
+    // transferCode(`{a:10//ddd\n}`, {object:true,format:true})
+    // =>
+    // 
+    // ({
+    //     a: 10 //ddd
+    //   });
+    // retainLines: true => not formatted
+    // retainLines: false => formatted
+    let { code: genCode } = generate(ast, { configFile: false, babelrc: false, retainLines: false, minified: compress }, astCode);
+    if (genCode.endsWith(";")) {
+        genCode = genCode.slice(0, genCode.length - 1);
+    }
+    if (genCode.startsWith("(") && genCode.endsWith(")")) {
+        genCode = genCode.slice(1, genCode.length - 1);
+    }
+    // remove extra newline
+    // example: transferCode(`{a:10 // fuck ads\n}`, {object:true,format:true}))
+    //          =>
+    // {
+    //     a: 10 // fuck ads
+    // }
+    if (genCode.endsWith("\n\n}")) {
+        genCode = genCode.slice(0, genCode.length - "\n\n}".length) + "\n}";
+    }
+    return genCode;
 }
 // first arg is code in string,second arg is optional options
 // options:  {bigint:'string'|'bigint'|undefined}

@@ -4,20 +4,20 @@ const MAX_STACK_SIZE = 3;
  * Mock method response
  */
 export function mockResponseMethods(service, mocks) {
-    return mockMethodReturnType(service, 1 /* response */, mocks);
+    return mockMethodReturnType(service, 1 /* MethodType.response */, mocks);
 }
 /**
  * Mock methods request
  */
 export function mockRequestMethods(service, mocks) {
-    return mockMethodReturnType(service, 0 /* request */, mocks);
+    return mockMethodReturnType(service, 0 /* MethodType.request */, mocks);
 }
 function mockMethodReturnType(service, type, mocks) {
     const root = service.root;
     const serviceMethods = service.methods;
     return Object.keys(serviceMethods).reduce((methods, method) => {
         const serviceMethod = serviceMethods[method];
-        const methodMessageType = type === 0 /* request */
+        const methodMessageType = type === 0 /* MethodType.request */
             ? serviceMethod.requestType
             : serviceMethod.responseType;
         const messageType = root.lookupType(methodMessageType);
@@ -262,14 +262,14 @@ export class Mocker {
      * Mock methods request
      */
     mockRequestMethods(service) {
-        return this.mockMethodReturnType(service, 0 /* request */);
+        return this.mockMethodReturnType(service, 0 /* MethodType.request */);
     }
     mockMethodReturnType(service, type) {
         const root = service.root;
         const serviceMethods = service.methods;
         return Object.keys(serviceMethods).reduce((methods, method) => {
             const serviceMethod = serviceMethods[method];
-            const methodMessageType = type === 0 /* request */
+            const methodMessageType = type === 0 /* MethodType.request */
                 ? serviceMethod.requestType
                 : serviceMethod.responseType;
             const messageType = root.lookupType(methodMessageType);
