@@ -312,39 +312,39 @@ export function transferCode(code: string, options?: TransferOptions) {
     return code
 }
 
-export function tryPrettyJSON(code: string): string {
+export function tryPrettyCodeAsJSON(code: string): string {
     try {
-        return prettyJSON(code)
+        return prettyCodeAsJSON(code)
     } catch (e) {
         return code
     }
 }
 
-export function tryCompressJSON(code: string): string {
+export function tryCompressCodeAsJSON(code: string): string {
     try {
-        return compressJSON(code)
+        return compressCodeAsJSON(code)
     } catch (e) {
         return code
     }
 }
 
-export function prettyJSON(code: string): string {
+export function prettyCodeAsJSON(code: string): string {
     return transferJSON(code, { compress: false })
 }
 
-export function compressJSON(code: string): string {
+export function compressCodeAsJSON(code: string): string {
     return transferJSON(code, { compress: true })
 }
 
-export function parseJSONSafe(code: string): any {
+export function parseJSONObjectSafe(code: string): any {
     return JSONBigInt.parse(code)
 }
 
-export function prettyJSONSafe(object: any): string {
+export function prettyJSONObjectSafe(object: any): string {
     return JSONBigInt.stringify(object, null, "    ")
 }
 
-export function compressJSONSafe(object: any): string {
+export function compressJSONObjectSafe(object: any): string {
     return JSONBigInt.stringify(object)
 }
 

@@ -267,35 +267,35 @@ export function transferCode(code, options) {
     }
     return code;
 }
-export function tryPrettyJSON(code) {
+export function tryPrettyCodeAsJSON(code) {
     try {
-        return prettyJSON(code);
+        return prettyCodeAsJSON(code);
     }
     catch (e) {
         return code;
     }
 }
-export function tryCompressJSON(code) {
+export function tryCompressCodeAsJSON(code) {
     try {
-        return compressJSON(code);
+        return compressCodeAsJSON(code);
     }
     catch (e) {
         return code;
     }
 }
-export function prettyJSON(code) {
+export function prettyCodeAsJSON(code) {
     return transferJSON(code, { compress: false });
 }
-export function compressJSON(code) {
+export function compressCodeAsJSON(code) {
     return transferJSON(code, { compress: true });
 }
-export function parseJSONSafe(code) {
+export function parseJSONObjectSafe(code) {
     return JSONBigInt.parse(code);
 }
-export function prettyJSONSafe(object) {
+export function prettyJSONObjectSafe(object) {
     return JSONBigInt.stringify(object, null, "    ");
 }
-export function compressJSONSafe(object) {
+export function compressJSONObjectSafe(object) {
     return JSONBigInt.stringify(object);
 }
 // transferJSON solves the bigint problem in javascript
