@@ -7,7 +7,7 @@
 //   npx babel --config-file ./lib/es/babel.config.json lib/es/code.js --out-file lib/code.js
 import * as Babel from "@babel/core"
 import generate from "@babel/generator";
-import * as JSONBigInt from 'json-bigint';
+export * from "./_code-json"
 
 export function parseAst(code) {
     // const {
@@ -334,18 +334,6 @@ export function prettyCodeAsJSON(code: string): string {
 
 export function compressCodeAsJSON(code: string): string {
     return transferJSON(code, { compress: true })
-}
-
-export function parseJSONObjectSafe(code: string): any {
-    return JSONBigInt.parse(code)
-}
-
-export function prettyJSONObjectSafe(object: any): string {
-    return JSONBigInt.stringify(object, null, "    ")
-}
-
-export function compressJSONObjectSafe(object: any): string {
-    return JSONBigInt.stringify(object)
 }
 
 export interface TransferJSON {
