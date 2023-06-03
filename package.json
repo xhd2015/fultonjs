@@ -4,7 +4,7 @@
   "description": "fultonjs common",
   "main": "index.js",
   "scripts": {
-    "generate": "./node_modules/@babel/cli/bin/babel.js --copy-files --config-file ./babel.config.json  --out-dir lib src",
+    "generate": "./node_modules/@babel/cli/bin/babel.js --copy-files --config-file ./babel.config.json  --out-dir lib src && mv lib/node-ts/* lib/node && rm -rf lib/node-ts",
     "generateTest": "./node_modules/@babel/cli/bin/babel.js --config-file ./babel.config.json  --out-dir lib/test test",
     "generate2": "npx babel --config-file ./babel.config.json  --out-dir lib lib/es",
     "test": "echo \"Error: no test specified\" && exit 1",
