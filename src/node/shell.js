@@ -1,88 +1,96 @@
-// provide basic shell capabilities
-const fs = require("fs")
-const path = require("path")
-const child_process = require("child_process")
-const { dirname } = require("path");
-const crypto = require('crypto');
-
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+import { dirname } from "path";
 // escape string
-function esc(s) {
-	let idx = s.indexOf("'")
-	if (idx != -1) {
-		s = s.replace("'", "'\\''") // escape the ' with \'
-	}
-	return "'" + s + "'"
+export function esc(s) {
+    let idx = s.indexOf("'");
+    if (idx != -1) {
+        s = s.replace("'", "'\\''"); // escape the ' with \'
+    }
+    return "'" + s + "'";
 }
-
 // originally, escape is function for urlencode
 // used to escape arguments
-function escape(commands) {
-	if (!commands || commands.length === 0) return ""
-	if (commands.constructor === String) {
-		return esc(commands)
-	}
-	let c = ""
-	for (let command of commands) {
-		c += esc(command) + " "
-	}
-	return c.slice(0, c.length - 1) // remove last " "
+export function escape(commands) {
+    if (!commands || commands.length === 0)
+        return "";
+    if (commands.constructor === String) {
+        return esc(commands);
+    }
+    let c = "";
+    for (let command of commands) {
+        c += esc(command) + " ";
+    }
+    return c.slice(0, c.length - 1); // remove last " "
 }
-
-function writestdout(data) {
-	process.stdout.write(data)
+export function writestdout(data) {
+    process.stdout.write(data);
 }
-function writestderr(data) {
-	process.stderr.write(data)
+export function writestderr(data) {
+    process.stderr.write(data);
 }
 // trim suffix: "\n"
-function chomp(s) {
-	return (s && s.endsWith("\n")) ? s.slice(0, s.length - 1) : s
+export function chomp(s) {
+    return (s && s.endsWith("\n")) ? s.slice(0, s.length - 1) : s;
 }
-async function realpath(s) {
-	return await exec(["realpath", s])
+export function realpath(s) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield exec(["realpath", s]);
+    });
 }
-
 // node file.js ..
 // argv[0] = path to node
 // argv[1] = file.js
-let cmdDirResolved
-function cmdDir() {
-	if (cmdDirResolved) {
-		return cmdDirResolved
-	}
-	let path = realpath(process.argv[1])
-	return cmdDirResolved = require("path").dirname(path)
+let cmdDirResolved;
+export export function cmdDir() {
+    if (cmdDirResolved) {
+        return cmdDirResolved;
+    }
+    let path = realpath(process.argv[1]);
+    return cmdDirResolved = require("path").dirname(path);
 }
-
 // relative to execFile
-function cmdRel(path) {
-	return require("path").join(cmdDir(), path)
+export function cmdRel(path) {
+    return require("path").join(cmdDir(), path);
+}
+export function runBash(cmd, options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield spawnStdBash(cmd, options);
+    });
 }
 // spanwStdBash
 // returns the command
-function spawnStdBash(cmd, options) {
-	let c = child_process.spawn("/bin/bash", ["-c", cmd], options)
-	c.stdout.on('data', writestdout)
-	c.stderr.on('data', writestderr)
-	return c
+export function spawnStdBash(cmd, options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield spawnStd("bash", ["-ec", cmd], options);
+    });
 }
 // execute the cmd and connect them to stderr & stdout
 // return the exit code
-async function spawnStd(cmd, args, options) {
-	// spawn("ls", ["-l","-h"])
-	let c = child_process.spawn(cmd, args, options)
-	c.stdout.on('data', writestdout)
-	c.stderr.on('data', writestderr)
-	return await new Promise(function (resolve, reject) {
-		c.on('error', function (e) {
-			reject(e)
-		})
-		c.on('close', function (code) {
-			resolve(code)
-		})
-	})
+export function spawnStd(cmd, args, options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // spawn("ls", ["-l","-h"])
+        let c = child_process.spawn(cmd, args, options);
+        c.stdout.pipe(process.stdout);
+        c.stderr.pipe(process.stderr);
+        return yield new Promise(function (resolve, reject) {
+            c.on("exit", (code) => {
+                if (code === 0) {
+                    resolve(0);
+                    return;
+                }
+                reject(new Error(`exit: ${code}`));
+            });
+        });
+    });
 }
-
 // cmd can be a script
 // design concern:
 //    1. do not care exit code, only 0 and non-0 are distinguished
@@ -91,95 +99,94 @@ async function spawnStd(cmd, args, options) {
 //    4. no input, because ssh does not accept in such environment
 // options:
 //   setProcess(process)
-async function execSSH(sshHost, cmd, env, options) {
-	if (!sshHost) {
-		throw new Error("requires sshHost")
-	}
-	// difference between exec and spawn:
-	//    spawn gives you raw control on stdin,stdout,stderr, which means you must manage your buffer if you want to collect data
-	//    exec provides a callback with stdout,stderr already buffered
-	//   
-	//    when write to stdout/stderr, spawn is more responsive(real time)
-	//
-	//    spawn accepts  binary,[args...], which is more suitable for command wrapping.
-	//    exec accepts  a plain string, which is hard to escape correctly. But can be solved not beautifully by passing via env
-	return new Promise(function (resolve, reject) {
-		let process
-		process = child_process.exec('ssh "$EXEC_SSH_HOST" "$EXEC_SSH_CMD"', { encoding: 'utf-8', env: { ...env, EXEC_SSH_CMD: cmd, EXEC_SSH_HOST: sshHost } }, (err, stdout, stderr) => {
-			const outStr = chomp(stdout?.toString('utf-8') || "")
-			if (err) {
-				const errStr = chomp(stderr?.toString('utf-8') || "")
-				err.cmd = cmd
-				err.message = `ssh command failed(exit status not 0): ${cmd}, caused by ${err.message}, stdErr:${errStr}, stdout:${outStr}`
-				reject(err) // use resolve instead of reject, because we want it to be normal
-				return
-			}
-			resolve(outStr)
-		});
-		if (options?.setProcess) {
-			options.setProcess(process);
-		}
-
-	})
+export function execSSH(sshHost, cmd, env, options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!sshHost) {
+            throw new Error("requires sshHost");
+        }
+        // difference between exec and spawn:
+        //    spawn gives you raw control on stdin,stdout,stderr, which means you must manage your buffer if you want to collect data
+        //    exec provides a callback with stdout,stderr already buffered
+        //   
+        //    when write to stdout/stderr, spawn is more responsive(real time)
+        //
+        //    spawn accepts  binary,[args...], which is more suitable for command wrapping.
+        //    exec accepts  a plain string, which is hard to escape correctly. But can be solved not beautifully by passing via env
+        return new Promise(function (resolve, reject) {
+            let process;
+            process = child_process.exec('ssh "$EXEC_SSH_HOST" "$EXEC_SSH_CMD"', { encoding: 'utf-8', env: Object.assign(Object.assign({}, env), { EXEC_SSH_CMD: cmd, EXEC_SSH_HOST: sshHost }) }, (err, stdout, stderr) => {
+                const outStr = chomp((stdout === null || stdout === void 0 ? void 0 : stdout.toString('utf-8')) || "");
+                if (err) {
+                    const errStr = chomp((stderr === null || stderr === void 0 ? void 0 : stderr.toString('utf-8')) || "");
+                    err.cmd = cmd;
+                    err.message = `ssh command failed(exit status not 0): ${cmd}, caused by ${err.message}, stdErr:${errStr}, stdout:${outStr}`;
+                    reject(err); // use resolve instead of reject, because we want it to be normal
+                    return;
+                }
+                resolve(outStr);
+            });
+            if (options === null || options === void 0 ? void 0 : options.setProcess) {
+                options.setProcess(process);
+            }
+        });
+    });
 }
-
 // sshOptions?.ConnectTimeout
-function spawnSSH(sshHost, cmd, sshOptions, options) {
-	if (!sshHost) {
-		throw new Error("requires sshHost")
-	}
-	if (!cmd) {
-		throw new Error("requires cmd")
-	}
-	const sshArgs = []
-	// timeout in seconds
-	if (sshOptions?.ConnectTimeout) {
-		sshArgs.push("-o", `ConnectTimeout ${sshOptions.ConnectTimeout}`)
-	}
-	return child_process.spawn("ssh", [...sshArgs, sshHost, cmd], options)
+export function spawnSSH(sshHost, cmd, sshOptions, options) {
+    if (!sshHost) {
+        throw new Error("requires sshHost");
+    }
+    if (!cmd) {
+        throw new Error("requires cmd");
+    }
+    const sshArgs = [];
+    // timeout in seconds
+    if (sshOptions === null || sshOptions === void 0 ? void 0 : sshOptions.ConnectTimeout) {
+        sshArgs.push("-o", `ConnectTimeout ${sshOptions.ConnectTimeout}`);
+    }
+    return child_process.spawn("ssh", [...sshArgs, sshHost, cmd], options);
 }
-
 // cmd: executable binary or script
 // args: array of args
 // options
 //     c.stdin.write(data);
 //     c.stdin.end();
-async function spawn(cmd, args, options,) {
-	const c = child_process.spawn(cmd, args, options)
-	return new Promise(function (resolve, reject) {
-		c.on('error', function (e) {
-			reject(e)
-		})
-		c.on('close', function (code) {
-			resolve({ code })
-		})
-	})
+export function spawn(cmd, args, options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const c = child_process.spawn(cmd, args, options);
+        return new Promise(function (resolve, reject) {
+            c.on('error', function (e) {
+                reject(e);
+            });
+            c.on('close', function (code) {
+                resolve({ code });
+            });
+        });
+    });
 }
-
-let unitMapping = {
-	'd': 24 * 60 * 60 * 1000,
-	'h': 60 * 60 * 1000,
-	'm': 60 * 1000,
-	's': 1000,
-}
+export let unitMapping = {
+    'd': 24 * 60 * 60 * 1000,
+    'h': 60 * 60 * 1000,
+    'm': 60 * 1000,
+    's': 1000,
+};
 // return Promise
-function wait(n) {
-	// number:ms
-	// "1s", "2s", "2d"
-	if (typeof n === 'string') {
-		let last = n[n.length - 1]
-		n = Number(n.slice(0, n.length - 1))
-		let scale = unitMapping[last]
-		if (scale) {
-			n *= scale
-		}
-	}
-	return new Promise(resolve => setTimeout(resolve, n))
+export function wait(n) {
+    // number:ms
+    // "1s", "2s", "2d"
+    if (typeof n === 'string') {
+        let last = n[n.length - 1];
+        n = Number(n.slice(0, n.length - 1));
+        let scale = unitMapping[last];
+        if (scale) {
+            n *= scale;
+        }
+    }
+    return new Promise(resolve => setTimeout(resolve, n));
 }
-function sleep(n) {
-	return new Promise(resolve => setTimeout(resolve, n))
+export function sleep(n) {
+    return new Promise(resolve => setTimeout(resolve, n));
 }
-
 // cmd: accepts array(each of which will be escaped)
 //      or a string, which is passed to the shell directly, without quote
 // options is passed to child_process.exec directly
@@ -189,264 +196,266 @@ function sleep(n) {
 //   await exec(['bash','-c',''])
 // returns: output string, or if error {errcode,cmd,message}
 // you can check if(res.errcode){ /* handle error */}
-async function exec(cmd, options) {
-	if (cmd instanceof Array) {
-		cmd = escape(cmd)
-	}
-	// stderr is output parent's stderr
-	// stdout is returned as result
-	//
-	try {
-		return new Promise((resolve, reject) => {
-			child_process.exec(cmd, { encoding: 'utf-8', ...options }, (err, stdout, stderr) => {
-				const outStr = chomp(stdout?.toString('utf-8') || "")
-				const errStr = chomp(stderr?.toString('utf-8') || "")
-				if (err) {
-					err.cmd = cmd
-					err.message = `command failed(exit status not 0): ${cmd}, caused by ${err.message}, stdErr:${errStr}, stdout:${outStr}`
-					if (err.errcode === null || err.errcode === undefined) {
-						err.errcode = 1
-					}
-					resolve(err) // use resolve instead of reject, because we want it to be normal
-					return
-				}
-				resolve(outStr)
-			})
-		})
-		// sync version
-		// let c = child_process.execSync(cmd, { encoding: 'utf-8', ...options })
-		// return chomp(c)
-	} catch (e) {
-		// e.code will be the exit code
-		// the caller should check
-		// if(e.errcode){ /* handle the case*/}
-		// let message = e.message
-		e.cmd = cmd
-		e.message = `command failed(exit ${e.status}): ${cmd}`
-		e.errcode = e.status
-		return e
-	}
+export function exec(cmd, options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (cmd instanceof Array) {
+            cmd = escape(cmd);
+        }
+        // stderr is output parent's stderr
+        // stdout is returned as result
+        //
+        try {
+            return new Promise((resolve, reject) => {
+                child_process.exec(cmd, Object.assign({ encoding: 'utf-8' }, options), (err, stdout, stderr) => {
+                    const outStr = chomp((stdout === null || stdout === void 0 ? void 0 : stdout.toString('utf-8')) || "");
+                    const errStr = chomp((stderr === null || stderr === void 0 ? void 0 : stderr.toString('utf-8')) || "");
+                    if (err) {
+                        err.cmd = cmd;
+                        err.message = `command failed(exit status not 0): ${cmd}, caused by ${err.message}, stdErr:${errStr}, stdout:${outStr}`;
+                        if (err.errcode === null || err.errcode === undefined) {
+                            err.errcode = 1;
+                        }
+                        resolve(err); // use resolve instead of reject, because we want it to be normal
+                        return;
+                    }
+                    resolve(outStr);
+                });
+            });
+            // sync version
+            // let c = child_process.execSync(cmd, { encoding: 'utf-8', ...options })
+            // return chomp(c)
+        }
+        catch (e) {
+            // e.code will be the exit code
+            // the caller should check
+            // if(e.errcode){ /* handle the case*/}
+            // let message = e.message
+            e.cmd = cmd;
+            e.message = `command failed(exit ${e.status}): ${cmd}`;
+            e.errcode = e.status;
+            return e;
+        }
+    });
 }
-
-async function ls(dir) {
-	return fs.promises.readdir(dir || ".")
+export function ls(dir) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return fs.promises.readdir(dir || ".");
+    });
 }
-
-async function stat(path) {
-	return new Promise((resolve, reject) => {
-		fs.stat(path, (err, stat) => {
-			if (err) {
-				resolve(undefined)
-			} else {
-				resolve(stat)
-			}
-		})
-	})
+export function stat(path) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return new Promise((resolve, reject) => {
+            fs.stat(path, (err, stat) => {
+                if (err) {
+                    resolve(undefined);
+                }
+                else {
+                    resolve(stat);
+                }
+            });
+        });
+    });
 }
-async function exists(path) {
-	return !!(await stat(path))
+export function exists(path) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return !!(yield stat(path));
+    });
 }
-
-function cp(src, dest) {
-	fs.copyFileSync(src, dest)
+export function cp(src, dest) {
+    fs.copyFileSync(src, dest);
 }
 // cp -rf src dst
-async function cp_rf(src, dest) {
-	// src can be array
-	let cmd = await exec(["cp", "-rf", ...(src instanceof Array ? src : [src]), dest])
-	if (cmd.errcode) {
-		throw cmd
-	}
+export function cp_rf(src, dest) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // src can be array
+        let cmd = yield exec(["cp", "-rf", ...(src instanceof Array ? src : [src]), dest]);
+        if (cmd.errcode) {
+            throw cmd;
+        }
+    });
 }
-async function cat(f) {
-	// return string if encoding specified,otherwise buffer
-	return await fs.promises.readFile(f, { encoding: "utf-8" })
+export function cat(f) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // return string if encoding specified,otherwise buffer
+        return yield fs.promises.readFile(f, { encoding: "utf-8" });
+    });
 }
-async function cat_silent(f) {
-	try {
-		return await cat(f)
-	} catch (e) {
-		// ignore
-	}
+export function cat_silent(f) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            return yield cat(f);
+        }
+        catch (e) {
+            // ignore
+        }
+    });
 }
-async function cat_bin(f) {
-	return await fs.promises.readFile(f)
+export function cat_bin(f) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield fs.promises.readFile(f);
+    });
 }
-async function write(f, content) {
-	return await fs.promises.writeFile(f, content)
+export function write(f, content) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield fs.promises.writeFile(f, content);
+    });
 }
-async function write_f(f, content) {
-	let dir = dirname(f)
-	if (!await isDir(dir)) {
-		await mkdir_p(dir)
-	}
-	await write(f, content)
+export function write_f(f, content) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let dir = dirname(f);
+        if (!(yield isDir(dir))) {
+            yield mkdir_p(dir);
+        }
+        yield write(f, content);
+    });
 }
-async function rm(f) {
-	if (fs.promises.rm) { // node 15
-		await fs.promises.rm(f)
-		// fs.rmSync(f)
-	} else {
-		let cmd = await exec(`rm ${escape(f)}`)
-		if (cmd.errcode) {
-			throw cmd
-		}
-	}
+export function rm(f) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (fs.promises.rm) { // node 15
+            yield fs.promises.rm(f);
+            // fs.rmSync(f)
+        }
+        else {
+            let cmd = yield exec(`rm ${escape(f)}`);
+            if (cmd.errcode) {
+                throw cmd;
+            }
+        }
+    });
 }
-async function rm_rf(f) {
-	if (fs.promises.rm) { // node 15
-		await fs.promises.rm(f, { force: true, recursive: true })
-	} else {
-		let cmd = await exec(`rm -rf ${escape(f)}`)
-		if (cmd.errcode) {
-			throw cmd
-		}
-	}
+export function rm_rf(f) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (fs.promises.rm) { // node 15
+            yield fs.promises.rm(f, { force: true, recursive: true });
+        }
+        else {
+            let cmd = yield exec(`rm -rf ${escape(f)}`);
+            if (cmd.errcode) {
+                throw cmd;
+            }
+        }
+    });
 }
-
-async function isFile(f) {
-	let fileStat = await stat(f)
-	return fileStat && fileStat.isFile()
+export function isFile(f) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let fileStat = yield stat(f);
+        return fileStat && fileStat.isFile();
+    });
 }
-async function isDir(d) {
-	let dirStat = await stat(d)
-	return dirStat && dirStat.isDirectory()
+export function isDir(d) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let dirStat = yield stat(d);
+        return dirStat && dirStat.isDirectory();
+    });
 }
-async function mkdir(path) {
-	await fs.promises.mkdir(path, { recursive: false })
+export function mkdir(path) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield fs.promises.mkdir(path, { recursive: false });
+    });
 }
-async function mkdir_p(path) {
-	await fs.promises.mkdir(path, { recursive: true })
+export function pwd() {
+    return process.cwd();
 }
-async function touch(file) {
-	await fs.promises.writeFile(file, "")
+export function home() {
+    return process.env["HOME"];
 }
-function removeSuffix(name, suffix) {
-	if (name && name.endsWith(suffix)) {
-		return name.slice(0, name.length - suffix.length)
-	}
-	return name
+export function mkdir_p(path) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield fs.promises.mkdir(path, { recursive: true });
+    });
 }
-
+// TODO: needs fix: when file does exist, don't overwrite
+export function touch(file) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield fs.promises.writeFile(file, "");
+    });
+}
+export function removeSuffix(name, suffix) {
+    if (name && name.endsWith(suffix)) {
+        return name.slice(0, name.length - suffix.length);
+    }
+    return name;
+}
 // prefix is optional
-async function mktemp(prefix) {
-	return await fs.promises.mkdtemp(prefix || "tmp-")
+export function mktemp(prefix) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield fs.promises.mkdtemp(prefix || "tmp-");
+    });
 }
-
 // within the temp directory
 // [async] callback(dir)
 /* async */
-function withinTemp(prefix, callback) {
-	return new Promise((resolve, reject) => {
-		if (typeof prefix === 'function' && !callback) {
-			callback = prefix
-			prefix = ""
-		}
-		if (!callback) {
-			reject(new Error("requires callback"))
-			return
-		}
-		fs.mkdtemp(prefix || "tmp-", function (err, dir) {
-			if (err) {
-				reject(err)
-				return
-			}
-			; (async () => {
-				resolve(await callback(dir))
-			})().catch(reject)
-				.finally(() => {
-					rm_rf(dir)
-				})
-		})
-	})
+export function withinTemp(prefix, callback) {
+    return new Promise((resolve, reject) => {
+        if (typeof prefix === 'function' && !callback) {
+            callback = prefix;
+            prefix = "";
+        }
+        if (!callback) {
+            reject(new Error("requires callback"));
+            return;
+        }
+        fs.mkdtemp(prefix || "tmp-", function (err, dir) {
+            if (err) {
+                reject(err);
+                return;
+            }
+            ;
+            (() => __awaiter(this, void 0, void 0, function* () {
+                resolve(yield callback(dir));
+            }))().catch(reject)
+                .finally(() => {
+                rm_rf(dir);
+            });
+        });
+    });
 }
-
 // write content mapping, if a file is undefined,  it is deleted
 // empty content will truncate the file
-async function writeMapping(dir, mapping) {
-	if (mapping) {
-		for (let name in mapping) {
-			let content = mapping[name]
-			let fullpath = path.join(dir, name)
-			if (content === undefined) {
-				await rm_rf(fullpath)
-			} else if (content || content === '') {
-				await write_f(fullpath, content)
-			}
-		}
-	}
+export function writeMapping(dir, mapping) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (mapping) {
+            for (let name in mapping) {
+                let content = mapping[name];
+                let fullpath = path.join(dir, name);
+                if (content === undefined) {
+                    yield rm_rf(fullpath);
+                }
+                else if (content || content === '') {
+                    yield write_f(fullpath, content);
+                }
+            }
+        }
+    });
 }
-
 // options:{
 //    ref:false, // indicates if the system should wait while any watcher is running when exiting
 // }
-async function deepwatch(dir, handler, options) {
-	const { ref } = options || {}
-	const dirExists = await exists(dir)
-	if (!dirExists) {
-		// fallback: use watchFile to watch non-existent file
-		const watcher = fs.watchFile(dir, (cur, prev) => {
-			console.log("")
-		})
-		if (!ref) {
-			watcher.unref()
-		}
-	}
-
-	if (!await exists(dir)) {
-
-	}
-	// if (fs.promises.)
+export function deepwatch(dir, handler, options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { ref } = options || {};
+        const dirExists = yield exists(dir);
+        if (!dirExists) {
+            // fallback: use watchFile to watch non-existent file
+            const watcher = fs.watchFile(dir, (cur, prev) => {
+                console.log("");
+            });
+            if (!ref) {
+                watcher.unref();
+            }
+        }
+        if (!(yield exists(dir))) {
+        }
+        // if (fs.promises.)
+    });
 }
-
-function error(msg) {
-	console.error(msg)
-	process.exit(1)
+export function error(msg) {
+    console.error(msg);
+    process.exit(1);
 }
-
-function md5(s) {
-	if (!s) {
-		return ''
-	}
-	return crypto.createHash('md5').update(s).digest('hex');
-}
-
-module.exports = {
-	escape,
-	chomp,
-	execSSH,
-	spawnSSH,
-	// spawn, // not used currently
-	spawnStd,
-	spawnStdBash,
-	exec,
-	realpath,
-	cmdDir,
-	cmdRel,
-	ls,
-	exists,
-	cp,
-	cp_rf,
-	cat,
-	cat_silent,
-	cat_bin,
-	write,
-	write_f,
-	rm,
-	rm_rf,
-	isFile,
-	isDir,
-	dirname,
-	mkdir,
-	mkdir_p,
-	stat,
-	touch,
-	removeSuffix,
-	mktemp,
-	withinTemp,
-	writeMapping,
-	wait,
-	sleep,
-	error,
-	md5,
+export function md5(s) {
+    if (!s) {
+        return '';
+    }
+    return crypto.createHash('md5').update(s).digest('hex');
 }

@@ -5,18 +5,9 @@
 // transfer:
 //   npm install --save-dev @babel/cli @babel/preset-env
 //   npx babel --config-file ./lib/es/babel.config.json lib/es/code.js --out-file lib/code.js
-import * as BabelStandalone from "@babel/standalone/babel"
+import * as Babel from "@babel/standalone/babel"
 import generate from "@babel/generator";
-let Babel = BabelStandalone
-// not browser?
-if (typeof window === 'undefined') {
-    // use server side babel/core
-    Babel = require("@babel/core")
-} else {
-    // in browser, must be imported via *
-    // import * as BabelStandalone from "@babel/standalone/babel"
-    Babel = BabelStandalone || (window as any).Babel
-}
+export * from "./_code-json"
 
 export function parseAst(code) {
     // const {
@@ -239,7 +230,16 @@ export const ANNOTATION = Symbol.for("annotation");
 //  }
 // Babel transform '(...)' into '();'
 // return:
-export function transferCode(code, options) {
+export interface TransferOptions {
+    removeSemicolon?: false,
+    object?: false  // is the code an object?
+    format?: false
+    bigint?: 'string' | 'bigint' | undefined  // string is preferred, it coverts large number xxx into "xxx"
+    annotation?: Object          //  {a:{b:{[ANNOTATION]:"// some comment", "c":{...}}}}
+    //       example: {"a":{"b":{[ANNOTATION]:"/* something */"}}
+    debug?: boolean
+}
+export function transferCode(code: string, options?: TransferOptions) {
     let { bigint, object, format, annotation, debug } = options || {}
     const needTransfrom = bigint || format
     if (!needTransfrom) {
@@ -310,6 +310,118 @@ export function transferCode(code, options) {
         }
     }
     return code
+}
+
+export function tryPrettyCodeAsJSON(code: string): string {
+    try {
+        return prettyCodeAsJSON(code)
+    } catch (e) {
+        return code
+    }
+}
+
+export function tryCompressCodeAsJSON(code: string): string {
+    try {
+        return compressCodeAsJSON(code)
+    } catch (e) {
+        return code
+    }
+}
+
+export function prettyCodeAsJSON(code: string): string {
+    return transferJSON(code, { compress: false })
+}
+
+export function compressCodeAsJSON(code: string): string {
+    return transferJSON(code, { compress: true })
+}
+
+export interface TransferJSON {
+    compress?: boolean // by default will not compress the json
+}
+// transferJSON solves the bigint problem in javascript
+// examples:
+// > JSON.parse('{"a":9999999999999999,"b":  9999999999999999}')
+//   { a: 10000000000000000, b: 10000000000000000 }
+// > console.log(a.transferJSON('{"a":9999999999999999,"b":  9999999999999999}',{compress:true}))
+//   {"a":9999999999999999,"b":9999999999999999}
+// > console.log(a.transferJSON('{"a":9999999999999999,"b":  9999999999999999}'))
+//   {
+//     "a": 9999999999999999,
+//     "b": 9999999999999999
+//   }
+export function transferJSON(code: string, options?: TransferJSON): string {
+    const debug = false
+    const format = true
+    const bigint = true
+    const compress = !!options?.compress
+    // let { bigint, object, format, annotation, debug } = options || {}
+    // const needTransfrom = bigint || format
+    // if (!needTransfrom) {
+    //     return code
+    // }
+    const plugins = []
+    if (bigint) {
+        // plugins.push(pluginOfVisitor({
+        //     NumericLiteral(path) {
+        //         // only NumericLiteral has extra.raw, extra.rawValue
+        //         const { node } = path
+        //         // convert big ast into code
+        //         // only NumericLiteral has extra.raw, extra.rawValue
+        //         let raw = node.extra.raw
+        //         if (isBignumber(raw)) {
+        //             node.extra.raw += 'n'
+        //         }
+        //     }
+        // }))
+    }
+    // if (annotation) {
+    //     // plugins.push(pluginOfVisitor(new AnnotationVisitor(annotation)))
+    //     plugins.push(pluginOfVisitor(makeAnnotationVisitor(annotation)))
+    // }
+    const astCode = "(" + code + ")"
+
+    // parse ast first
+    let { ast } = Babel.transform(astCode, {
+        ast: true, // load ast
+        configFile: false, // do not find any configFile
+        babelrc: false,
+        plugins,
+    })
+
+    if (debug) {
+        //     plugins.push(pluginOfVisitor(debugVisitor))
+        traverseAst(ast, (node) => {
+            console.log("[DEBUG] visiting:", node.type)
+        })
+    }
+
+    // transferCode(`{a:10//ddd\n}`, {object:true,format:true})
+    // =>
+    // 
+    // ({
+    //     a: 10 //ddd
+
+    //   });
+    // retainLines: true => not formatted
+    // retainLines: false => formatted
+    let { code: genCode } = generate(ast, { configFile: false, babelrc: false, retainLines: false, minified: compress }, astCode)
+    if (genCode.endsWith(";")) {
+        genCode = genCode.slice(0, genCode.length - 1)
+    }
+    if (genCode.startsWith("(") && genCode.endsWith(")")) {
+        genCode = genCode.slice(1, genCode.length - 1)
+    }
+    // remove extra newline
+    // example: transferCode(`{a:10 // fuck ads\n}`, {object:true,format:true}))
+    //          =>
+    // {
+    //     a: 10 // fuck ads
+    // }
+    if (genCode.endsWith("\n\n}")) {
+        genCode = genCode.slice(0, genCode.length - "\n\n}".length) + "\n}"
+    }
+    return genCode
 }
 
 // first arg is code in string,second arg is optional options
