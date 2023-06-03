@@ -7,7 +7,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+// provide basic shell capabilities
+import * as fs from "fs";
+import * as path from "path";
+import * as child_process from "child_process";
 import { dirname } from "path";
+import * as crypto from 'crypto';
 // escape string
 export function esc(s) {
     let idx = s.indexOf("'");

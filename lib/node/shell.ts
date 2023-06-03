@@ -1,9 +1,9 @@
 // provide basic shell capabilities
-import fs = require("fs")
-import path = require("path")
-import child_process = require("child_process")
+import * as fs from "fs"
+import * as path from "path"
+import * as child_process from "child_process"
 import { dirname } from "path"
-import crypto = require('crypto');
+import * as crypto from 'crypto'
 
 // escape string
 export function esc(s) {
