@@ -1,7 +1,7 @@
 # Development
 
 ```
-# TS(sr ) -> ES2021(src)
+# TS(src) -> ES2021(src)
 npm run genFromTS
 
 # ES2021(src) -> nodejs(lib)
