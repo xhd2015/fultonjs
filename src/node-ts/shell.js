@@ -17,7 +17,7 @@ import * as crypto from 'crypto';
 export function esc(s) {
     let idx = s.indexOf("'");
     if (idx != -1) {
-        s = s.replace("'", "'\\''"); // escape the ' with \'
+        s = s.replaceAll("'", "'\\''"); // escape the ' with \'
     }
     return "'" + s + "'";
 }
